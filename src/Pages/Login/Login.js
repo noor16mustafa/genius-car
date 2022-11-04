@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import image from '../../assets/images/login/login.svg'
 import { AuthContext } from '../../contexts/AuthProvider/AuthProvider';
 import { FaGoogle } from 'react-icons/fa';
@@ -8,6 +8,10 @@ import { GoogleAuthProvider } from 'firebase/auth';
 
 const Login = () => {
     const { loginUser, signInWithProvider } = useContext(AuthContext);
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    const from = location.state?.from.pathname || '/'
 
     const googleProvider = new GoogleAuthProvider();
 
@@ -20,7 +24,29 @@ const Login = () => {
         loginUser(email, password)
             .then(result => {
                 const user = result.user;
-                console.log(user);
+
+                const currentUser = {
+                    email: user.email
+                }
+                console.log(currentUser);
+
+                //get jwt token
+                fetch('http://localhost:5000/jwt', {
+                    method: 'POST',
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: JSON.stringify(currentUser)
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        console.log(data);
+
+                        //local storage is easiest but not the best practice to store token
+                        localStorage.setItem('geniusToken', data.token);
+                        navigate(from, { replace: true })
+                    })
+
 
             })
             .catch(e => console.error(e))
